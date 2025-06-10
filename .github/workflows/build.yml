@@ -1,0 +1,50 @@
+name: Build and Push ImmortalWrt Docker Image
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download ImageBuilder
+        run: |
+          wget https://downloads.immortalwrt.org/releases/24.10.1/targets/bcm27xx/bcm2712/immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64.tar.zst
+          tar --use-compress-program=unzstd -xf immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64.tar.zst
+
+      - name: Configure ImageBuilder
+        run: |
+          cd immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64
+
+          sed -i '/^# CONFIG_TARGET_ROOTFS_TARGZ is not set/d' .config
+          echo "CONFIG_TARGET_ROOTFS_TARGZ=y" >> .config
+
+          sed -i '/CONFIG_TARGET_ROOTFS_EXT4FS=y/ s/^/#/' .config || true
+          sed -i '/CONFIG_TARGET_ROOTFS_SQUASHFS=y/ s/^/#/' .config || true
+
+      - name: Compile ImmortalWrt
+        working-directory: immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64
+        run: |
+          make image
+
+      - name: Prepare Docker Context
+        run: |
+          mkdir -p docker-context
+          ROOTFS=$(find immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64/bin/targets -name '*rootfs.tar.gz')
+          tar -xvf "$ROOTFS" -C docker-context
+
+      - name: Build and Push Docker Image to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          context: ./docker-context
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
