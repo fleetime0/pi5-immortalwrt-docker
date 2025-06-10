@@ -61,3 +61,5 @@ jobs:
           file: Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
+          platforms: linux/arm64
+
