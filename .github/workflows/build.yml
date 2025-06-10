@@ -12,6 +12,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Load packages.config to environment
+        id: set-packages-env
+        run: |
+          PACKAGES=$(tr '\n' ' ' < packages.config)
+          echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -33,7 +39,7 @@ jobs:
       - name: Compile ImmortalWrt
         working-directory: immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64
         run: |
-          make image
+          make image PACKAGES="$PACKAGES"
 
       - name: Prepare Docker Context
         run: |
