@@ -60,6 +60,5 @@ jobs:
           context: ./docker-context
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/fleetime0/immortalwrt-pi5:latest
           platforms: linux/arm64
-
