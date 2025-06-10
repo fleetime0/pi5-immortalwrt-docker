@@ -47,6 +47,13 @@ jobs:
           ROOTFS=$(find immortalwrt-imagebuilder-24.10.1-bcm27xx-bcm2712.Linux-x86_64/bin/targets -name '*rootfs.tar.gz')
           tar -xvf "$ROOTFS" -C docker-context
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and Push Docker Image to GitHub Container Registry
         uses: docker/build-push-action@v2
         with:
